@@ -1,0 +1,41 @@
+name: 'Kaniko Build'
+description: 'A GitHub action for building Docker images using Kaniko'
+
+inputs:
+  dockerfile:
+    description: 'Path to the Dockerfile'
+    required: true
+  destination:
+    description: 'Docker registry destination (image:tag)'
+    required: true
+  platform:
+    description: 'Build platform (default: amd64, arm64, ppc64le, s390x)'
+    required: false
+    default: 'amd64'
+  extra_args:
+    description: 'Extra arguments to Kaniko'
+    required: false
+    default: ''
+
+runs:
+  using: 'composite'
+  steps:
+    - run: |
+        SCRIPT=$(find /app/_work/_actions -name entrypoint.sh | head -1)
+        chmod +x $SCRIPT
+
+        # Construct the command with named arguments
+        cmd="$SCRIPT --dockerfile '${{ inputs.dockerfile }}' --destination '${{ inputs.destination }}'"
+
+        # Optional arguments
+        if [[ -n "${{ inputs.platform }}" ]]; then
+          cmd="$cmd --platform '${{ inputs.platform }}'"
+        fi
+
+        if [[ -n "${{ inputs.extra_args }}" ]]; then
+          cmd="$cmd --extra_args '${{ inputs.extra_args }}'"
+        fi
+
+        # Run the entrypoint script with all arguments
+        eval $cmd
+      shell: bash

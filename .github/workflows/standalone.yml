@@ -1,0 +1,86 @@
+name: Extract Kaniko Binaries
+
+on:
+  push:
+    tags:
+      - 'v*'
+jobs:
+  once:
+    name: Create single release for all builds
+    runs-on: ubuntu-latest
+    outputs:
+      upload_url: ${{ steps.create_release.outputs.upload_url }}
+    steps:
+      - name: Create a release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.TOKEN }}
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: Release ${{ github.ref }}
+          draft: false
+          prerelease: false
+
+  extract-kaniko:
+    needs: once
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        platforms:
+          - amd64
+          - arm64
+          - ppc64le
+          - s390x
+
+    steps:
+    # Checkout the repository
+    - name: Checkout Code
+      uses: actions/checkout@v3
+
+    # Pull the Kaniko image for the specified platform
+    - name: Pull Kaniko Image
+      run: |
+        image="gcr.io/kaniko-project/executor:latest"
+        docker pull --platform linux/${{ matrix.platforms }} $image
+        docker save $image -o kaniko_image.tar
+
+    # Extract required files from the Kaniko image
+    - name: Extract Kaniko Files
+      run: |
+        mkdir -p /tmp/kaniko-extracted /tmp/kaniko-output /tmp/kaniko-layers
+
+        # Extract Kaniko image tar
+        tar -xf kaniko_image.tar -C /tmp/kaniko-extracted
+
+        # Extract layers
+        layers=$(jq -r '.[0].Layers[]' /tmp/kaniko-extracted/manifest.json)
+        for layer in $layers; do
+          tar -xf /tmp/kaniko-extracted/$layer -C /tmp/kaniko-layers
+        done
+
+        # Copy required files
+        cp /tmp/kaniko-layers/kaniko/executor /tmp/kaniko-output/
+        cp /tmp/kaniko-layers/kaniko/docker-credential-gcr /tmp/kaniko-output/
+        cp /tmp/kaniko-layers/kaniko/docker-credential-ecr-login /tmp/kaniko-output/
+        cp /tmp/kaniko-layers/kaniko/docker-credential-acr-env /tmp/kaniko-output/
+        cp /tmp/kaniko-layers/etc/nsswitch.conf /tmp/kaniko-output/
+        cp -r /tmp/kaniko-layers/kaniko/.docker /tmp/kaniko-output/
+
+
+    # Package the extracted files into a tar.gz
+    - name: Create Kaniko Tarball
+      run: |
+        tar -czvf kaniko-binaries-linux-${{ matrix.platforms }}.tar.gz -C /tmp/kaniko-output .
+
+    # Upload the tarball as a GitHub release asset
+    - name: Upload Kaniko Binaries as Release Asset
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.TOKEN }}
+      with:
+        upload_url: ${{ needs.once.outputs.upload_url }}
+        asset_path: kaniko-binaries-linux-${{ matrix.platforms }}.tar.gz
+        asset_name: kaniko-binaries-linux-${{ matrix.platforms }}.tar.gz
+        asset_content_type: application/gzip

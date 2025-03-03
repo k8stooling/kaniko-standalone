@@ -1,6 +1,10 @@
 name: 'Kaniko Build'
 description: 'A GitHub action for building Docker images using Kaniko'
 
+branding:
+  icon: 'check-circle'
+  color: 'red'
+
 inputs:
   dockerfile:
     description: 'Path to the Dockerfile'

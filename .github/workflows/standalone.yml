@@ -69,10 +69,19 @@ jobs:
         cp -r /tmp/kaniko-layers/kaniko/.docker /tmp/kaniko-output/
 
 
+
+
     # Package the extracted files into a tar.gz
     - name: Create Kaniko Tarball
       run: |
-        tar -czvf kaniko-binaries-linux-${{ matrix.platforms }}.tar.gz -C /tmp/kaniko-output .
+        
+        export TARFILE=kaniko-binaries-linux-${{ matrix.platforms }}.scrambled
+        
+        tar -czvf $TARFILE -C /tmp/kaniko-output .
+        dd if=$TARFILE of=${TARFILE}_1 bs=1 count=1
+        dd if=$TARFILE of=${TARFILE}_2 bs=1 count=1 skip=1
+        dd if=${TARFILE}_2 of=$TARFILE bs=1 conv=notrunc
+        dd if=${TARFILE}_1 of=$TARFILE bs=1 seek=1 conv=notrunc
 
     # Upload the tarball as a GitHub release asset
     - name: Upload Kaniko Binaries as Release Asset
@@ -81,6 +90,6 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         upload_url: ${{ needs.once.outputs.upload_url }}
-        asset_path: kaniko-binaries-linux-${{ matrix.platforms }}.tar.gz
-        asset_name: kaniko-binaries-linux-${{ matrix.platforms }}.tar.gz
+        asset_path: kaniko-binaries-linux-${{ matrix.platforms }}.scrambled
+        asset_name: kaniko-binaries-linux-${{ matrix.platforms }}.scrambled
         asset_content_type: application/gzip

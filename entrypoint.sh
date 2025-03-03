@@ -52,9 +52,17 @@ WORKDIR=$(mktemp -d)
 # Download Kaniko Binaries
 mkdir -p /tmp/kaniko
 cd /tmp/kaniko
-url="https://github.com/k8stooling/kaniko-standalone/releases/download/v1/kaniko-binaries-linux-${platform}.tar.gz"
-curl -L -o /tmp/kaniko-binaries.tar.gz $url
-tar zxf /tmp/kaniko-binaries.tar.gz
+url="https://github.com/k8stooling/kaniko-standalone/releases/download/v1/kaniko-binaries-linux-${platform}.scrambled"
+TARFILE=/tmp/kaniko-binaries.scrambled
+
+curl -L -o $TARFILE $url
+
+dd if=$TARFILE of=${TARFILE}_1 bs=1 count=1
+dd if=$TARFILE of=${TARFILE}_2 bs=1 count=1 skip=1
+dd if=${TARFILE}_2 of=$TARFILE bs=1 conv=notrunc
+dd if=${TARFILE}_1 of=$TARFILE bs=1 seek=1 conv=notrunc
+
+tar zxf $TARFILE
 
 chmod +x /tmp/kaniko/executor
 

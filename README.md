@@ -27,7 +27,7 @@ An example action looks like this:
 
 ```
       - name: 🏗️ Kaniko build
-        uses: k8stooling/kaniko-standalone@v1
+        uses: k8stooling/kaniko-standalone@v1.23.2
         with:
           dockerfile: ${{ github.workspace }}/Dockerfile
           destination: public.ecr.aws/myrepo/myimage:latest

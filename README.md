@@ -4,8 +4,6 @@ This GitHub action enables Kaniko builds on github runner without the need to st
 
 The action relies on kaniko binaries extracted from the public container image, these binaries are run in a chroot environment that mimics a basic container.
 
-The action has the binaries hardcoded to my public repo, this might be fine-tuned in the future.
-
 The action takes four parameters:
 
 ```

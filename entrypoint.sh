@@ -112,10 +112,27 @@ export AWS_DEFAULT_REGION=$AWS_DEFAULT_REGION
 export AWS_REGION=$AWS_REGION
 export AWS_ROLE_ARN=$AWS_ROLE_ARN
 export AWS_STS_REGIONAL_ENDPOINTS=regional
-export AWS_WEB_IDENTITY_TOKEN_FILE=$AWS_WEB_IDENTITY_TOKEN_FILE
 export DOCKER_CONFIG=/kaniko/.docker/
 export KANIKO_EXTRA_ARGS="$extra_args"
 END
+
+# Add AWS credentials if AWS_SESSION_TOKEN is present
+if [[ -n "$AWS_SESSION_TOKEN" ]]; then
+  cat >> .env << END
+export AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID
+export AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY
+export AWS_SESSION_TOKEN=$AWS_SESSION_TOKEN
+END
+else
+  # Fallback to web identity token method
+  if [[ -n "$AWS_WEB_IDENTITY_TOKEN_FILE" ]]; then
+    mkdir -p var/run/secrets/eks.amazonaws.com/serviceaccount
+    cat "$AWS_WEB_IDENTITY_TOKEN_FILE" > var/run/secrets/eks.amazonaws.com/serviceaccount/token
+    cat >> .env << END
+export AWS_WEB_IDENTITY_TOKEN_FILE=/var/run/secrets/eks.amazonaws.com/serviceaccount/token
+END
+  fi
+fi
 
 # Execute Kaniko build
 sudo chroot . bash -c ". /.env; set; ./kaniko/executor -f /kaniko/workspace/$(basename ${dockerfile}) --context=/kaniko/workspace/ --force --destination=$destination --cleanup $KANIKO_EXTRA_ARGS"

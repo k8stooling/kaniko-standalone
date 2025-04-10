@@ -35,6 +35,9 @@ An example action looks like this:
 ```
 
 
+> [!NOTE]
+> Kaniko standalone relies on `mount -B` the `/proc` filesystem, hence your runner needs to run with privileged securityContext enabled.
+
 ☠️☠️☠️☠️☠️☠️☠️☠️☠️
 
 THE EXTRACTED BINARIES MUST BE RUN ONLY IN A CONTAINERIZED/CHROOT/EPHEMERAL ENVIRONMENT

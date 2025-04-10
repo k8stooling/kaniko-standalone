@@ -82,6 +82,7 @@ cp /bin/bash bin/
 
 mkdir -p proc/self
 cp /proc/self/mountinfo proc/self/
+cp /proc/self/stat proc/self/
 
 mkdir etc
 cp /etc/resolv.conf etc/

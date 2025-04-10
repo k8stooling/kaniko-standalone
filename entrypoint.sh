@@ -80,10 +80,10 @@ sudo mknod -m 666 dev/zero c 1 5
 mkdir bin
 cp /bin/bash bin/
 
-mkdir -p proc/self
+mkdir -p proc
 # cp /proc/self/mountinfo proc/self/
 # cp /proc/self/stat proc/self/
-sudo mount -B /proc/self proc/self
+sudo mount -B /proc proc
 
 mkdir etc
 cp /etc/resolv.conf etc/
